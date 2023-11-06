@@ -9,10 +9,74 @@ import { FaMicrophone } from "react-icons/fa";
 import { BiSmile } from "react-icons/bi";
 
 import chatBg from "/assets/images/whats-app-bg.png";
-import { useState } from "react";
+import { useEffect, useReducer, useState } from "react";
+import { addDoc, collection, doc, getDocs } from "firebase/firestore";
+import { auth, database } from "../firebase.init";
 
-function Chat() {
-  const [receive, setReceive] = useState(true);
+function Chat({ userData }) {
+  const receive = true;
+  const fileRef = useReducer(null);
+
+  const [message, setMessage] = useState("");
+  const [messageData, setMessageData] = useState([]);
+  const [file, setFile] = useState("");
+
+  const addMessage = async () => {
+    const userDoc = doc(database, "Users", `${auth.currentUser?.uid}`);
+    const messageDoc = doc(userDoc, "Message", `${auth.currentUser?.uid}`);
+    const messageRef = collection(messageDoc, `Message-${userData?.id}`);
+    try {
+      await addDoc(messageRef, {
+        message: message,
+        // file: file,
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const sendMessage = async () => {
+    const userDoc = doc(database, "Users", `${userData?.id}`);
+    const messageDoc = doc(userDoc, "Message", `${userData?.id}`);
+    const messageRef = collection(
+      messageDoc,
+      `Message-${auth.currentUser?.uid}`
+    );
+    try {
+      await addDoc(messageRef, {
+        message: message,
+        file: file,
+        name: auth.currentUser?.displayName,
+      });
+      addMessage();
+      setFile("");
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const showMessage = async () => {
+    const userDoc = doc(database, "Users", `${auth.currentUser?.uid}`);
+    const messageDoc = doc(userDoc, "Message", `${auth.currentUser?.uid}`);
+    const messageRef = collection(messageDoc, `Message-${userData?.id}`);
+    setTimeout(async () => {
+      try {
+        const data = await getDocs(messageRef);
+        const filteredData = data.docs.map((doc) => ({
+          ...doc.data(),
+          id: doc.id,
+        }));
+        setMessageData(filteredData);
+      } catch (err) {
+        console.error(err);
+      }
+    }, 1000);
+  };
+
+  useEffect(() => {
+    showMessage();
+  }, [messageData]);
+
   return (
     <div className="w-full">
       {/* chat head */}
@@ -41,22 +105,20 @@ function Chat() {
         className="h-[80vh] space-y-3"
         style={{ backgroundImage: `url(${chatBg})`, backgroundSize: "cover" }}
       >
-        <div className="px-10">
-          <div className="flex justify-end">
-            <div className=" bg-[#005C4B] px-2 py-1 rounded">
-              <p>hello dssjdfggjdhkg adfgjdkfghh</p>
-              <p className="flex justify-end text-xs">7:35 AM</p>
-            </div>
-          </div>
-        </div>
-        <div className="px-10">
-          <div className={`flex ${receive && "justify-start"}`}>
-            <div className=" bg-[#202C33] px-2 py-1 rounded">
-              <p>hello dssjdfggjdhkg adfgjdkfghh</p>
-              <p className="flex justify-end text-xs">7:35 AM</p>
-            </div>
-          </div>
-        </div>
+        {messageData.length > 0
+          ? messageData?.map((index, data) => {
+              <div key={index} className="px-10">
+                <div className="flex justify-end">
+                  <div className=" bg-[#005C4B] px-2 py-1 rounded">
+                    <p>
+                      {data?.message} {console.log(data?.message)}
+                    </p>
+                    <p className="flex justify-end text-xs">7:35 AM</p>
+                  </div>
+                </div>
+              </div>;
+            })
+          : null}
       </div>
       {/* chat footer */}
       <div className=" px-5 py-3 bg-[#202C33]">
@@ -72,10 +134,15 @@ function Chat() {
               type="text"
               name=""
               id=""
+              onChange={(e) => setMessage(e.target.value)}
             />
           </div>
           {receive ? (
-            <AiOutlineSend className="cursor-pointer" size={20} />
+            <AiOutlineSend
+              onClick={sendMessage}
+              className="cursor-pointer"
+              size={20}
+            />
           ) : (
             <FaMicrophone className="cursor-pointer" size={20} />
           )}
