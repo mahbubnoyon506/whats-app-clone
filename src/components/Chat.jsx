@@ -9,10 +9,13 @@ import { FaMicrophone } from "react-icons/fa";
 import { BiSmile } from "react-icons/bi";
 
 import chatBg from "/assets/images/whats-app-bg.png";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function Chat() {
   const [receive, setReceive] = useState(true);
+  const [chatRooms, setChatRooms] = useState([]);
+
+  console.log(chatRooms);
   return (
     <div className="w-full">
       {/* chat head */}

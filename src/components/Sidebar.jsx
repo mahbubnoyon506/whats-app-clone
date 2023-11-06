@@ -6,13 +6,65 @@ import {
   BsThreeDotsVertical,
 } from "react-icons/bs";
 import SidebarChatList from "./SidebarChatList";
+import { useEffect, useState } from "react";
+import { collection, getDocs } from "firebase/firestore";
+import { auth, database } from "../firebase.init";
+import { useNavigate } from "react-router-dom";
+import { signOut } from "firebase/auth";
+
 function Sidebar() {
+  const [users, setUsers] = useState([]);
+
+  const getUser = async () => {
+    const userRef = collection(database, "Users");
+    try {
+      const data = await getDocs(userRef);
+      const filteredData = data.docs.map((doc) => ({
+        ...doc.data(),
+        id: doc.id,
+      }));
+      setUsers(filteredData);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    getUser();
+  }, [users]);
+
+  const navigate = useNavigate();
+
+  const logout = async () => {
+    try {
+      await signOut(auth);
+      navigate("/signin");
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  // console.log(users);
   return (
     <div className="w-full ">
       {/* side bar head */}
       <div className="flex justify-between items-center px-5 py-3 bg-[#202C33]">
         <div className="w-1/3 rounded-full">
-          <BsPersonCircle size={40} />
+          {auth.currentUser?.photoURL ? (
+            <img
+              className="cursor-pointer rounded-full"
+              width={50}
+              height={50}
+              src={auth.currentUser?.photoURL}
+              alt=""
+              onClick={logout}
+            />
+          ) : (
+            <BsPersonCircle
+              className="cursor-pointer"
+              size={40}
+              onClick={logout}
+            />
+          )}
         </div>
         <div className="w-2/3 flex justify-end items-center gap-5">
           {" "}
@@ -31,11 +83,9 @@ function Sidebar() {
           name=""
           id=""
         />
-        <SidebarChatList />
-        <SidebarChatList />
-        <SidebarChatList />
-        <SidebarChatList />
-        <SidebarChatList />
+        {users.map((user, index) => (
+          <SidebarChatList key={index} user={user} />
+        ))}
       </div>
     </div>
   );
