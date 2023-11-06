@@ -1,52 +1,58 @@
-import { MdDonutLarge } from "react-icons/md";
+import React, { useEffect, useState } from "react";
+import { auth, database } from "../firebase.init";
+import { collection, getDocs } from "firebase/firestore";
+import { signOut } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
 import {
   BsFillChatLeftTextFill,
   BsPersonCircle,
   BsSearch,
   BsThreeDotsVertical,
 } from "react-icons/bs";
+import { MdDonutLarge } from "react-icons/md";
+
 import SidebarChatList from "./SidebarChatList";
-import { useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
-import { auth, database } from "../firebase.init";
-import { useNavigate } from "react-router-dom";
-import { signOut } from "firebase/auth";
+import toast from "react-hot-toast";
 
 function Sidebar({ setUserData }) {
+  // State to hold user data
   const [users, setUsers] = useState([]);
 
-  const getUser = async () => {
+  // Function to fetch user data from Firebase
+  const getUsers = async () => {
     const userRef = collection(database, "Users");
     try {
-      const data = await getDocs(userRef);
-      const filteredData = data.docs.map((doc) => ({
+      const querySnapshot = await getDocs(userRef);
+      const userData = querySnapshot.docs.map((doc) => ({
         ...doc.data(),
         id: doc.id,
       }));
-      setUsers(filteredData);
-    } catch (err) {
-      console.error(err);
+      setUsers(userData);
+    } catch (error) {
+      console.error("Error fetching user data:", error);
     }
   };
 
+  // Effect to fetch user data when the component mounts
   useEffect(() => {
-    getUser();
-  }, [users]);
-
+    getUsers();
+  }, []);
+  console.log(users);
   const navigate = useNavigate();
 
-  const logout = async () => {
+  // Function to handle user logout
+  const handleLogout = async () => {
     try {
       await signOut(auth);
       navigate("/signin");
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error("Error logging out:", error);
     }
   };
 
   return (
-    <div className="w-full ">
-      {/* side bar head */}
+    <div className="w-full">
+      {/* Sidebar Header */}
       <div className="flex justify-between items-center px-5 py-3 bg-[#202C33]">
         <div className="w-1/3 rounded-full">
           {auth.currentUser?.photoURL ? (
@@ -54,37 +60,52 @@ function Sidebar({ setUserData }) {
               className="cursor-pointer rounded-full"
               width={40}
               height={40}
-              src={auth.currentUser?.photoURL}
+              src={auth.currentUser.photoURL}
               alt=""
-              onClick={logout}
+              onClick={handleLogout}
             />
           ) : (
             <BsPersonCircle
               className="cursor-pointer"
               size={40}
-              onClick={logout}
+              onClick={handleLogout}
             />
           )}
         </div>
         <div className="w-2/3 flex justify-end items-center gap-5">
-          {" "}
-          <MdDonutLarge size={25} />
-          <BsFillChatLeftTextFill size={25} />
-          <BsThreeDotsVertical size={25} />
+          <MdDonutLarge
+            className="cursor-pointer"
+            onClick={() => toast.success("Didn't add yet.")}
+            size={25}
+          />
+          <BsFillChatLeftTextFill
+            className="cursor-pointer"
+            onClick={() => toast.success("Didn't add yet.")}
+            size={25}
+          />
+          <BsThreeDotsVertical
+            className="cursor-pointer"
+            onClick={() => toast.success("Didn't add yet.")}
+            size={25}
+          />
         </div>
       </div>
-      {/* sidebar body */}
+      {/* Sidebar Body */}
       <div className="bg-[#111B21] px-5 pb-5 space-y-5 relative h-[90vh]">
         <BsSearch className="absolute left-8 top-8" size={20} />
         <input
-          className="bg-[#202C33] rounded-md w-full pl-10 py-2 focus:outline-none"
-          placeholder="Search or start new chat"
+          className="bg-[#202C33] rounded-md w-full pl-10 pr-2 py-2 focus:outline-none"
+          placeholder="Search or start a new chat"
           type="search"
           name=""
           id=""
         />
-        {users.map((user, index) => (
-          <SidebarChatList key={index} user={user} setUserData={setUserData} />
+        {users.map((user) => (
+          <SidebarChatList
+            key={user.id}
+            user={user}
+            setUserData={setUserData}
+          />
         ))}
       </div>
     </div>
