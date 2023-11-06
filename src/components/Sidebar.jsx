@@ -12,7 +12,7 @@ import { auth, database } from "../firebase.init";
 import { useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
 
-function Sidebar() {
+function Sidebar({ setUserData }) {
   const [users, setUsers] = useState([]);
 
   const getUser = async () => {
@@ -43,7 +43,7 @@ function Sidebar() {
       console.error(err);
     }
   };
-  // console.log(users);
+
   return (
     <div className="w-full ">
       {/* side bar head */}
@@ -52,8 +52,8 @@ function Sidebar() {
           {auth.currentUser?.photoURL ? (
             <img
               className="cursor-pointer rounded-full"
-              width={50}
-              height={50}
+              width={40}
+              height={40}
               src={auth.currentUser?.photoURL}
               alt=""
               onClick={logout}
@@ -84,7 +84,7 @@ function Sidebar() {
           id=""
         />
         {users.map((user, index) => (
-          <SidebarChatList key={index} user={user} />
+          <SidebarChatList key={index} user={user} setUserData={setUserData} />
         ))}
       </div>
     </div>
