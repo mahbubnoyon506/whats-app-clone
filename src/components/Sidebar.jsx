@@ -37,7 +37,7 @@ function Sidebar({ setUserData }) {
   useEffect(() => {
     getUsers();
   }, []);
-  console.log(users);
+
   const navigate = useNavigate();
 
   // Function to handle user logout

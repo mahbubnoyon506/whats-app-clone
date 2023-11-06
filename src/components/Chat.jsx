@@ -86,7 +86,6 @@ function Chat({ userData }) {
     toast.success("File uploaded.");
   };
 
-  console.log("got message", messageData);
   return (
     <div className="w-full">
       {/* chat head */}
