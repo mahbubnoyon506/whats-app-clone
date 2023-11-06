@@ -1,17 +1,24 @@
+import React from "react";
 import { BsPersonCircle } from "react-icons/bs";
 
 function SidebarChatList({ user, setUserData }) {
+  // Destructure user data
   const { profile_image, username, id } = user;
 
-  const handleUser = (user) => {
+  // Function to handle user selection and set user data
+  const handleUserClick = () => {
     setUserData({
-      id: id,
-      username: username,
-      profile_image: profile_image,
+      id,
+      username,
+      profile_image,
     });
   };
+
   return (
-    <div className="flex items-center gap-3 " onClick={handleUser(user)}>
+    <div
+      className="flex items-center gap-3 cursor-pointer"
+      onClick={handleUserClick}
+    >
       {profile_image ? (
         <img
           className="rounded-full"
@@ -23,7 +30,7 @@ function SidebarChatList({ user, setUserData }) {
       ) : (
         <BsPersonCircle size={40} />
       )}
-      <div className="w-full flex justify-between ">
+      <div className="w-full flex justify-between">
         <div>
           <h2 className="text-sm">{username ? username : "Not set"}</h2>
           <p className="text-xs">message</p>

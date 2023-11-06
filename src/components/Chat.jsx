@@ -1,60 +1,53 @@
+import React, { useEffect, useReducer, useRef, useState } from "react";
+import { addDoc, collection, doc, getDocs } from "firebase/firestore";
+import { auth, database } from "../firebase.init";
+import { AiOutlineSend } from "react-icons/ai";
+
 import {
   BsCameraVideo,
   BsPersonCircle,
   BsSearch,
   BsTelephone,
 } from "react-icons/bs";
-import { AiOutlinePlus, AiOutlineSend } from "react-icons/ai";
-import { FaMicrophone } from "react-icons/fa";
 import { BiSmile } from "react-icons/bi";
+import { FaMicrophoneSlash } from "react-icons/fa";
+import { MdAttachFile } from "react-icons/md";
 
 import chatBg from "/assets/images/whats-app-bg.png";
-import { useEffect, useReducer, useState } from "react";
-import { addDoc, collection, doc, getDocs } from "firebase/firestore";
-import { auth, database } from "../firebase.init";
+import toast from "react-hot-toast";
 
 function Chat({ userData }) {
-  const receive = true;
   const fileRef = useReducer(null);
-
   const [message, setMessage] = useState("");
   const [messageData, setMessageData] = useState([]);
-  const [file, setFile] = useState("");
+  const [file, setFile] = useState(""); // Removed unused state variables
 
+  // Function to add a message document to Firestore
   const addMessage = async () => {
     const userDoc = doc(database, "Users", `${auth.currentUser?.uid}`);
     const messageDoc = doc(userDoc, "Message", `${auth.currentUser?.uid}`);
     const messageRef = collection(messageDoc, `Message-${userData?.id}`);
-    try {
-      await addDoc(messageRef, {
-        message: message,
-        // file: file,
-      });
-    } catch (err) {
-      console.error(err);
-    }
-  };
+    const currentDate = new Date();
+    const formattedDate = currentDate.toLocaleString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
 
-  const sendMessage = async () => {
-    const userDoc = doc(database, "Users", `${userData?.id}`);
-    const messageDoc = doc(userDoc, "Message", `${userData?.id}`);
-    const messageRef = collection(
-      messageDoc,
-      `Message-${auth.currentUser?.uid}`
-    );
     try {
       await addDoc(messageRef, {
-        message: message,
-        file: file,
+        message,
+        file,
         name: auth.currentUser?.displayName,
+        timestamp: formattedDate,
       });
-      addMessage();
-      setFile("");
+      setFile(""); // Clear the file state after sending the message
     } catch (err) {
       console.error(err);
     }
   };
 
+  // Function to fetch and display messages
   const showMessage = async () => {
     const userDoc = doc(database, "Users", `${auth.currentUser?.uid}`);
     const messageDoc = doc(userDoc, "Message", `${auth.currentUser?.uid}`);
@@ -73,57 +66,118 @@ function Chat({ userData }) {
     }, 1000);
   };
 
+  // Effect to fetch and display messages when messageData or userData changes
   useEffect(() => {
     showMessage();
-  }, [messageData]);
+  }, [messageData, userData]);
 
+  // Function to send a message
+  const sendMessage = () => {
+    if (message) {
+      addMessage();
+    }
+    setMessage("");
+  };
+
+  const handleFileUpload = (e) => {
+    e.preventDefault();
+    setFile(URL.createObjectURL(e.target.files[0]));
+
+    toast.success("File uploaded.");
+  };
+
+  console.log("got message", messageData);
   return (
     <div className="w-full">
       {/* chat head */}
       <div className="flex justify-between items-center px-5 py-3 bg-[#202C33]">
-        <div className="w-1/3 flex gap-3 rounded-full">
-          <BsPersonCircle size={40} />
+        <div className=" flex gap-3 rounded-full">
+          {userData?.profile_image ? (
+            <img
+              className=" rounded-full"
+              width={40}
+              height={40}
+              src={userData?.profile_imageL}
+              alt=""
+            />
+          ) : (
+            <BsPersonCircle className="" size={40} />
+          )}
           <div className="">
-            <h2 className="">Title</h2>
+            <h2 className="">
+              {userData?.username ? userData?.username : "Not Set"}
+            </h2>
             <p className="text-xs">last seen</p>
           </div>
         </div>
-        <div className="w-2/3 flex justify-end items-center gap-5">
-          {" "}
+        <div className=" flex justify-end items-center gap-5">
           <div className="outline outline-1 outline-gray-500 p-2 rounded flex justify-center items-center gap-3 divide-x divide-gray-500">
-            <BsCameraVideo className="cursor-pointer" size={20} />
+            <BsCameraVideo
+              onClick={() => toast.success("Didn't add yet.")}
+              className="cursor-pointer"
+              size={20}
+            />
             <div className="pl-3">
-              <BsTelephone className="cursor-pointer" size={20} />
+              <BsTelephone
+                onClick={() => toast.success("Didn't add yet.")}
+                className="cursor-pointer"
+                size={20}
+              />
             </div>
           </div>
-          <BsSearch className="" size={20} />
+          <BsSearch
+            onClick={() => toast.success("Didn't add yet.")}
+            className="cursor-pointer"
+            size={20}
+          />
         </div>
       </div>
 
       {/* chat body */}
       <div
-        className="h-[80vh] space-y-3"
+        className="h-[80vh] overflow-y-scroll"
         style={{ backgroundImage: `url(${chatBg})`, backgroundSize: "cover" }}
       >
-        {messageData.length > 0
-          ? messageData?.map((index, data) => {
-              <div key={index} className="px-10">
+        {messageData.length > 0 &&
+          messageData
+            .slice()
+            .reverse()
+            .map((data, index) => (
+              <div key={index} className="px-10 py-3">
                 <div className="flex justify-end">
-                  <div className=" bg-[#005C4B] px-2 py-1 rounded">
-                    <p>
-                      {data?.message} {console.log(data?.message)}
-                    </p>
-                    <p className="flex justify-end text-xs">7:35 AM</p>
+                  <div>
+                    <div className=" bg-[#005C4B] px-2 py-1 rounded">
+                      <p>{data?.message}</p>
+                      <p className="flex justify-end text-xs">
+                        {data?.timestamp}
+                      </p>
+                    </div>
+                    {data.file !== "" && (
+                      <img className="pt-6" width={200} src={data.file} />
+                    )}
                   </div>
                 </div>
-              </div>;
-            })
-          : null}
+              </div>
+            ))}
       </div>
+
       {/* chat footer */}
-      <div className=" px-5 py-3 bg-[#202C33]">
+      <div className="px-5 py-3 bg-[#202C33]">
         <div className="flex justify-between items-center gap-3">
-          <AiOutlinePlus className="cursor-pointer hover:rotate-9" size={20} />
+          <div>
+            <MdAttachFile
+              className="cursor-pointer rotate-45 text-white"
+              size={30}
+              onClick={() => fileRef.current.click()}
+            />
+            <input
+              accept="image/*"
+              onChange={(e) => handleFileUpload(e)}
+              ref={fileRef}
+              type="file"
+              className="hidden"
+            />
+          </div>
           <div className="w-full relative">
             <BiSmile
               className="absolute top-2.5 left-2.5 cursor-pointer"
@@ -134,17 +188,23 @@ function Chat({ userData }) {
               type="text"
               name=""
               id=""
+              placeholder="Type a message..."
+              value={message}
               onChange={(e) => setMessage(e.target.value)}
             />
           </div>
-          {receive ? (
+          {message ? (
             <AiOutlineSend
               onClick={sendMessage}
               className="cursor-pointer"
-              size={20}
+              size={30}
             />
           ) : (
-            <FaMicrophone className="cursor-pointer" size={20} />
+            <FaMicrophoneSlash
+              onClick={() => toast.success("Didn't add yet.")}
+              className="cursor-pointer"
+              size={30}
+            />
           )}
         </div>
       </div>
